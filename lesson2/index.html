@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>表单验证</title>
+    <style>
+        #pwdLvWrapper {
+            display: inline-block;
+            width: 100px;
+            height: 5px;
+            background: #c3c3c3;
+        }
+        #pwdLv {
+            display: block;
+            background: green;
+            height: 5px;
+            width: 0;
+        }
+    </style>
+</head>
+<body>
+    <form action="" method="post" onsubmit="return wxk.regCheck();">
+        <input type="hidden" name="" id="errnum" value="0"/>
+        账户：<input type="text" name="" id="userid"/><br><br>
+        密码：<input type="password" name="" id="userpwd"/> 密码强度 <span id="pwdLvWrapper"><i id="pwdLv"></i></span><br><br>
+        确认：<input type="password" name="" id="userpwd2"/><br><br>
+        性别：
+        <input type="radio" name="sex" value="1" checked="checked">男
+        <input type="radio" name="sex" value="0">女<br><br>
+        年龄：
+        <select name="" id="age">
+            <option value="0" selected="selected">请选择年龄段</option>
+            <option value="1">18岁以下</option>
+            <option value="2">18-24岁</option>
+            <option value="3">24-34岁</option>
+            <option value="4">30-35岁</option>
+            <option value="5">35岁以上</option>
+        </select>
+        <br><br>
+        爱好：
+        <input type="checkbox" name="like" class="like">上网 
+        <input type="checkbox" name="like" class="like">逛街 
+        <input type="checkbox" name="like" class="like">看电影 
+        <input type="checkbox" name="like" class="like">其它 <br><br>
+        Email:
+        <input type="text" id="email"><br><br>
+        简介：<textarea name="" id="about" cols="30" rows="10"></textarea><br><br>
+        <input type="submit" value="注册" id="regBtn"/>
+        <input type="button" value="解锁" id="regUnLock" onclick="wxk.unlock()" style="display:none"/>
+    </form>
+    <script>
+        var wxk = {};// 生命一个对象，当做命名空间使用,以方便管理
+        // 定义一个公共函数来获取指定id元素，减少代码量，提高代码复用率
+        wxk.$ = function(id) {
+            return document.getElementById(id);
+        };
+        // 定义一个公共函数来获取指定class名称的元素集合，能兼容各个浏览器
+        wxk.getElementsByClassName = function(className,element) {
+            if(document.getElementsByClassName) {
+                return (element||document).getElementsByClassName(className);
+            }
+            var children = (element||document).getElementsByTagName("*");
+            var elements = [];
+            for(var i = 0; i < children.length; i++){
+                var child = children[i];
+                var classNames = child.className.split(" ");
+                for(var j = 0; j < classNames.length; j++){
+                    if(classNames[j] == className){
+                        elements.push(child);
+                        break;
+                    }
+                };
+            }
+            return elements;
+        };
+        //定义一个公共函数来解决事件监听的兼容问题
+        wxk.addListener = function(target,type,handler){
+            if(target.addEventListener){// 基于w3c内核事件监听
+                target.addEventListener(type,handler,false);
+            }else if(target.attachEvent){//基于ie内核浏览器 事件监听
+                target.attachEvent("on"+type,handler);
+            }else{
+                target["on"+type]=handler;
+            }
+        };
+        wxk.regCheck = function(){
+            var uid = wxk.$("userid");
+            var upwd = wxk.$("userpwd");
+            var upwd2 = wxk.$("userpwd2");
+            // 账户
+            if(uid.value.trim() == '') {
+                alert('账户不能为空');
+                wxk.err();
+                return false;
+            }
+            // 密码
+            if(upwd.value.trim() == '') {
+                alert("密码不能为空");
+                wxk.err();
+                return  false;
+            }
+            // 密码确认
+            if(upwd2.value.trim() != upwd.value.trim()) {
+                alert("两次输入密码不一致");
+                wxk.err();
+                return false;
+            }
+            // 年龄
+            var age = wxk.$("age");
+            if(age.value == "0"){
+                alert("请选择年龄段");
+                wxk.err();
+                return false;
+            };
+            // 爱好
+            var likes = document.getElementsByClassName("like");
+            var likeNum = 0;
+            for(var n = 0; n < likes.length; n++){
+                if(likes[n].checked){
+                    likeNum++;
+                }
+            };
+            if(likeNum == 0){
+                alert("请至少选择一个爱好！");
+                wxk.err();
+                return false;
+            }
+            //邮箱
+            var email = wxk.$("email");
+            if(!/\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/.test(email.value)){
+                alert("邮箱格式不正确");
+                wxk.err();
+                return false;
+            }
+            // 简介
+            var about = wxk.$("about");
+            if(about.value.length > 60){
+                alert("简介太长");
+                wxk.err();
+                return false;
+            }
+            return true;
+        };
+        //添加一些交互事件
+        wxk.addEvent = function(){
+            var pwd = wxk.$("userpwd");
+            wxk.addListener(pwd,"keyup",function(){
+                var lv=0;
+                if(/^\d{4,}$/.test(pwd.value)){
+                    lv = 10;
+                }else if(/^\w{4,}$/.test(pwd.value)){
+                    lv = 25;
+                }else if (/^[\d\w]{4,}$/.test(pwd.value)){
+                    lv = 50;
+                }else if (/^[\d\w~!@#$%\^&*\(\)\-{}\[\]=<>,\.\?\/]{4,}$/.test(pwd.value)){
+                    lv = 100;
+                }else if(pwd.value.length<6 && pwd.value.length>3){
+                    lv = 60;
+                }else if(pwd.value.length<4){
+                    lv = 0;
+                }
+                wxk.$("pwdLv").style.width = lv+"px";
+            });
+        };
+        //在用户单击注册按钮前就要运行起来,所以定义好就立刻调用
+        wxk.addEvent();
+        // 出错时记录错误次数。
+        wxk.err = function() {
+            var el = wxk.$("errnum");
+            var old = el.value;
+            if(wxk.lock(el)) {
+                el.value = parseInt(old) + 1;
+            }
+        };
+        // 通过次数判断是否要锁定注册 超过三次锁定
+        wxk.lock = function(el) {
+            if(el.value > 2) {
+                wxk.$("regBtn").disabled = true;
+                // 输入三次锁定
+                wxk.$("regUnLock").style.display = "block";
+                return false;
+            }else {
+                return true;
+            }
+        };
+        // 解锁
+        wxk.unlock = function() {
+            wxk.$("regBtn").disabled = false;
+            wxk.$("regUnLock").style.display = "none";
+        };
+    </script>
+</body>
+</html>
